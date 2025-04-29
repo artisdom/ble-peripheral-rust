@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::uuid::ShortUuid;
 
 pub fn uuid_to_cbuuid(uuid: Uuid) -> Retained<CBUUID> {
-    unsafe { CBUUID::UUIDWithString(&NSString::from_str(&uuid.to_string())) }
+    unsafe { CBUUID::UUIDWithString(&NSString::from_str(&uuid.to_short_string())) }
 }
 
 pub trait UuidExtension {

@@ -4,6 +4,8 @@ pub trait ShortUuid {
     fn from_short(uuid: u16) -> Uuid;
 
     fn from_string(uuid_str: &str) -> Uuid;
+
+    fn to_short_string(&self) -> String;
 }
 
 impl ShortUuid for Uuid {
@@ -26,4 +28,55 @@ impl ShortUuid for Uuid {
             }
         }
     }
+
+    fn to_short_string(&self) -> String {
+        let b = self.as_bytes();
+    
+        if &b[4..16] == b"\x00\x00\x10\x00\x80\x00\x00\x80\x5F\x9B\x34\xFB" {
+            if b[0] == 0 && b[1] == 0 {
+                return format!("{:04X}", u16::from_be_bytes([b[2], b[3]]));
+            } else {
+                return format!("{:08X}", u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+            }
+        }
+
+        self.to_string()
+    }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_short_string_with_16_bit_uuid() {
+        let uuid = Uuid::from_fields(0x1234, 0, 0x1000, b"\x80\x00\x00\x80\x5F\x9B\x34\xFB");
+        assert_eq!(uuid.to_short_string(), "1234");
+    }
+
+    #[test]
+    fn test_to_short_string_with_32_bit_uuid() {
+        let uuid = Uuid::from_fields(0x12345678, 0, 0x1000, b"\x80\x00\x00\x80\x5F\x9B\x34\xFB");
+        assert_eq!(uuid.to_short_string(), "12345678");
+    }
+
+    #[test]
+    fn test_from_string_with_16_bit_uuid() {
+        let uuid = Uuid::from_string("1234");
+        assert_eq!(uuid.to_short_string(), "1234");
+    }
+
+    #[test]
+    fn test_from_string_with_32_bit_uuid() {
+        let uuid = Uuid::from_string("12345678");
+        assert_eq!(uuid.to_short_string(), "12345678");
+    }
+
+    #[test]
+    fn test_from_string_with_full_uuid() {
+        let uuid = Uuid::from_string("12345678-0000-1000-8000-00805f9b34fb");
+        assert_eq!(uuid.to_short_string(), "12345678");
+    }
+}
+
